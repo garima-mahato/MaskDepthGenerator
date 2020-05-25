@@ -6,6 +6,12 @@
 
 [Custom Dataset](https://drive.google.com/open?id=1zQTsYCo7_p-4u_3pgNCjd7dpGFRUZIVJ) was made and used for training the network. Details about it can be found [here](https://github.com/genigarus/DepthMaskDataset).
 
+BG image - 100 images of 160x160x3 dimension
+FG with BG - 400000 images of 160x160x3 dimension
+GT Mask - 400000 images of 160x160x1 dimension 
+GT depth - 400000 images of 160x160x1 dimension
+
+Data augmentation used: Random flipping 
 
 ## Model Architecture
 
