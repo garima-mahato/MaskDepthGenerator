@@ -80,6 +80,8 @@ True Images:
 Then, I trained the network with image size of 160x160. After the first epoch, the resulting predictions were good enough to start. But after this, the depth predictions were just gray images. So, I changed the loss function. For depth prediction, I changed it to a combination of pixel intensity loss(L1), loss in edges(calculated using Sobel filters) and structural similarity(SSIM). For mask, results were coming fine but fine structures were not captured properly. So, I changed it to be a combination of BCELossWithLogits and SSIM(to maintain structural similarity).
 
 
+
+
 ## Evaluation metric
 
 I used RMSE to evaluate depth prediction which turned out to be 0.18 and mean IoU for mask prediction which turned out to be around 0.2.
@@ -104,5 +106,4 @@ This low value is due to abnormal weightage of losses and the model needs more t
 
 2) Even though the images used as background were quite simple but the complexity of foreground increased model complexity.
 
-
-
+[Link to run files to view tensorboard](https://drive.google.com/folderview?id=1AwNrjCuM3jbzxBMM5MkZJi0SPP7fLOR0)
