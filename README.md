@@ -82,9 +82,25 @@ Then, I trained the network with image size of 160x160. After the first epoch, t
 
 I used RMSE to evaluate depth prediction which turned out to be 0.18 and mean IoU for mask prediction which turned out to be around 0.2.
 
-This low value is dues to abnormal weightage of losses and the model needs more training.
+This low value is due to abnormal weightage of losses and the model needs more training.
 
+## Challenges faced
 
+1) Time constraint of colab 
+
+2) Large size of data.
+
+## Challenges overcomed to some level
+
+1) Data was read as bytes rather than extracting since extracting files exploded RAM. Resizing images to smaller size helped in reducing image size. For original size, data splitting and training helped.
+
+2) For overcoming time constraint in colab, created million of accounts :p. Switching between runtime type. This did not help much.
+
+## Lessons learnt
+
+1) Using data which was read as bytes impacts efficiency of increasing batch size and number of workers. For 64 batch size and 128 batch size, it took nearly the same time for single epoch training. With 128 batch size, I was able to handle all data for training for 80x80 image size. For 160x160 image size, I was able to handle only 70% of data with batch size of 64 during training.
+
+2) Even though the images used as background were quite simple but the complexity of foreground increased model complexity.
 
 
 
