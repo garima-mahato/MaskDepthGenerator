@@ -39,6 +39,8 @@ From this, we can see that 78% of the time is spent on loss calculation and batc
 
 [Link to model training file](https://github.com/genigarus/MaskDepthGenerator/blob/master/ResMaskDepthGenerator.ipynb)
 
+I started with training two separate models. One for mask prediction and the other for depth. For mask, since it was a simple prediction, I used a 2 layer encoder-decoder structure. For encoding, I used 2 Convolution block consisting of 3x3 convolution followed by ReLU and then BatchNorm. For decoding, 2 3x3 convolution and then convtranspose2d. For depth, I used the model architecture mentioned above. Once I observed both were working properly, I merged mask prediction in this depth prediction structure.
+
 For training, I used SGD optimizer with 0.01 learning rate.
 
 Initially, I trained the network with image size of 80x80. During this, I used L1 loss for depth prediction and BCELossWithLogits for mask prediction.
@@ -74,6 +76,14 @@ True Images:
 ![](https://raw.githubusercontent.com/genigarus/MaskDepthGenerator/master/Assets/depth_true_80.PNG)
 
 Then, I trained the network with image size of 160x160. After the first epoch, the resulting predictions were good enough to start. But after this, the depth predictions were just gray images. So, I changed the loss function. For depth prediction, I changed it to a combination of pixel intensity loss(L1), loss in edges(calculated using Sobel filters) and structural similarity(SSIM). For mask, results were coming fine but fine structures were not captured properly. So, I changed it to be a combination of BCELossWithLogits and SSIM(to maintain structural similarity).
+
+
+## Evaluation metric
+
+I used RMSE to evaluate depth prediction which turned out to be 0.18 and mean IoU for mask prediction which turned out to be around 0.2.
+
+This low value is dues to abnormal weightage of losses and the model needs more training.
+
 
 
 
