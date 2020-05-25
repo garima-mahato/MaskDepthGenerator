@@ -1,0 +1,155 @@
+Timer unit: 1e-06 s
+
+Total time: 1179.09 s
+File: <ipython-input-58-9d1915031109>
+Function: train_epoch at line 34
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    34                                           def train_epoch(model_name, model, criterion, optimizer, scheduler, train_loader, test_loader, epochs=20, batch_size=32, lr=0.01, save_cp=True, dir_checkpoint='./unet_model/checkpoints/', is_accumulate=False, is_val=True, init_epoch=0, img_step=4):
+    35         1         85.0     85.0      0.0      device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    36                                               # model_list = {'CustomUNet': CustomUNet}
+    37                                               # model = model_list[model_name](**model_params)
+    38         1          2.0      2.0      0.0      global_step = 0
+    39         1          2.0      2.0      0.0      train_losses = []
+    40         1          2.0      2.0      0.0      val_scores = []
+    41         1         46.0     46.0      0.0      data_len = len(train_loader)
+    42         1          1.0      1.0      0.0      accumulation_steps = batch_size // 16
+    43                                           
+    44                                               # Logging
+    45                                               # train_summary_writer = summary.create_file_writer(train_log_dir)
+    46                                               # test_summary_writer = summary.create_file_writer(test_log_dir)
+    47         1      11727.0  11727.0      0.0      writer = SummaryWriter(comment='{}-lr{}-e{}-{}'.format(model_name, lr, epochs, batch_size))#, flush_secs=30)
+    48         1        202.0    202.0      0.0      print('{}-lr{}-e{}-{}'.format(model_name, lr, epochs, batch_size))
+    49                                           
+    50         1     287455.0 287455.0      0.0      gpu_usage()
+    51                                           
+    52                                               # Start training...
+    53         2      46518.0  23259.0      0.0      for epoch in tqdm(range(init_epoch, init_epoch+epochs)):
+    54         1         21.0     21.0      0.0          batch_time = AverageMeter()
+    55         1          6.0      6.0      0.0          losses = AverageMeter()
+    56         1        101.0    101.0      0.0          N = len(train_loader)
+    57         1          3.0      3.0      0.0          running_loss = 0.0
+    58                                           
+    59                                                   # Switch to train mode
+    60         1       2038.0   2038.0      0.0          model.train()
+    61                                           
+    62         1         21.0     21.0      0.0          end = time.time()
+    63                                           		
+    64         1        345.0    345.0      0.0          optimizer.zero_grad()
+    65      3126  220261219.0  70461.0     18.7          for i, sample_batched in enumerate(tqdm(train_loader)):
+    66                                                       # optimizer.zero_grad()
+    67                                           
+    68                                                       # Prepare sample and target
+    69      3125    6509971.0   2083.2      0.6              sample_batched['bg'] = sample_batched['bg'].to(device)
+    70      3125    3908314.0   1250.7      0.3              sample_batched['image'] = sample_batched['image'].to(device)
+    71      3125    3906947.0   1250.2      0.3              sample_batched['depth'] = sample_batched['depth'].to(device)
+    72                                           
+    73                                                       #mask_type = torch.float32 #if model.n_classes == 1 else torch.long
+    74                                                       # true_masks = true_masks.to(device=device)#, dtype=mask_type)
+    75                                           
+    76                                                       # Predict
+    77      3125      18241.0      5.8      0.0              if epoch-init_epoch < 5 and i < 2:
+    78         2       2774.0   1387.0      0.0                print(f"GPU Usage after loading sample batches in epoch {epoch} and iteration {i}: ")
+    79         2     732556.0 366278.0      0.1                gpu_usage()
+    80         2         18.0      9.0      0.0                st = time.time()
+    81      3125   91898007.0  29407.4      7.8              output = model(sample_batched)
+    82      3125      19559.0      6.3      0.0              if epoch-init_epoch < 5 and i < 2:
+    83         2        372.0    186.0      0.0                 print(f"Actual Prediction time: {time.time() - st} sec")
+    84         2          7.0      3.5      0.0                 del st
+    85                                           
+    86      3125  243070745.0  77782.6     20.6              loss = criterion(output, sample_batched['depth'])
+    87                                                       
+    88      3125      20023.0      6.4      0.0              if is_accumulate:
+    89                                                         loss = loss / accumulation_steps
+    90                                           
+    91                                                       # Update step
+    92      3125     695920.0    222.7      0.1              losses.update(loss.data.item(), sample_batched['image'].size(0))
+    93      3125      15248.0      4.9      0.0              if epoch-init_epoch < 5 and i < 2:
+    94         2        308.0    154.0      0.0                print(f"GPU Usage after forward pass in epoch {epoch} and iteration {i}: ")
+    95         2     729179.0 364589.5      0.1                gpu_usage()
+    96         2         15.0      7.5      0.0                st = time.time()
+    97      3125   57288214.0  18332.2      4.9              loss.backward()
+    98                                                       # optimizer.step()
+    99      3125      15838.0      5.1      0.0              if is_accumulate and (i + 1 ) % accumulation_steps == 0:
+   100                                                         optimizer.step()
+   101                                                         optimizer.zero_grad()
+   102      3125       8838.0      2.8      0.0              if not is_accumulate:
+   103      3125    1475717.0    472.2      0.1                optimizer.step()
+   104      3125     898118.0    287.4      0.1                optimizer.zero_grad()
+   105      3125      15759.0      5.0      0.0              if epoch-init_epoch < 5 and i < 2:
+   106         2        276.0    138.0      0.0                print(f"Actual Backprop time: {time.time() - st} sec")
+   107         2        573.0    286.5      0.0                print(f"GPU Usage after backward pass in epoch {epoch} and iteration {i}: ")
+   108         2     697859.0 348929.5      0.1                gpu_usage()
+   109         2          9.0      4.5      0.0                del st
+   110      3125  469630392.0 150281.7     39.8              running_loss += loss.item()
+   111                                                       # Measure elapsed time
+   112      3125      77695.0     24.9      0.0              batch_time.update(time.time() - end)
+   113      3125      12176.0      3.9      0.0              end = time.time()
+   114      3125     104859.0     33.6      0.0              eta = str(datetime.timedelta(seconds=int(batch_time.val*(N - i))))
+   115                                           
+   116      3125      14130.0      4.5      0.0              global_step += 1
+   117                                                   
+   118                                                       # Log progress
+   119      3125      13354.0      4.3      0.0              if epoch-init_epoch < 5 and i<2:
+   120         2          6.0      3.0      0.0                st = time.time()
+   121      3125      10408.0      3.3      0.0              niter = epoch*N+i
+   122      3125      28139.0      9.0      0.0              if i % (N/2) == 0: #(i % (data_len // batch_size)) % 2 == 0:
+   123                                                         # Print to console
+   124         1          5.0      5.0      0.0                print('Epoch: [{0}][{1}/{2}]\t'
+   125                                                         'Time {batch_time.val:.3f} ({batch_time.sum:.3f})\t'
+   126                                                         'ETA {eta}\t'
+   127                                                         'Loss {loss.val:.4f} ({loss.avg:.4f})'
+   128         1        175.0    175.0      0.0                .format(epoch, i, N, batch_time=batch_time, loss=losses, eta=eta))
+   129      3125      13202.0      4.2      0.0              if i % 100 == 0:
+   130        32   14676228.0 458632.1      1.2                writer.add_images('images', sample_batched['image'], global_step)
+   131        32   32379291.0 1011852.8      2.7                writer.add_images('depth/true', sample_batched['depth'], global_step)
+   132        32   24987501.0 780859.4      2.1                writer.add_images('depth/pred', output, global_step)
+   133                                                       # Log to tensorboard
+   134      3125    1264785.0    404.7      0.1              writer.add_scalar('Train/Loss', losses.val, global_step)#, niter)
+   135      3125      32771.0     10.5      0.0              if epoch-init_epoch < 5 and i < 2:
+   136         2      11316.0   5658.0      0.0                print(f"GPU Usage after 1 sample training in epoch {epoch} and iteration {i}: ")
+   137         2     643623.0 321811.5      0.1                gpu_usage()
+   138         2        171.0     85.5      0.0                print(f"Train Logging time: {time.time() - st} sec")
+   139         2          6.0      3.0      0.0                del st
+   140                                           
+   141      3125      21954.0      7.0      0.0              if i % (N/2) == 0:
+   142         1     534306.0 534306.0      0.0                torch.save(model.state_dict(), dir_checkpoint + f'CP_epoch{epoch + 1}_batch{i}.pth')
+   143                                           
+   144         1          3.0      3.0      0.0          if is_val: # and global_step % (data_len) == 0:
+   145                                                       for tag, value in model.named_parameters():
+   146                                                           tag = tag.replace('.', '/')
+   147                                                           writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
+   148                                                           # writer.add_histogram('grads/' + tag, value.grad.data.cpu().numpy(), global_step)
+   149                                                       val_score = test(model, criterion, device, test_loader) #eval_net(model, test_loader, device)
+   150                                                       val_scores.append(val_score)
+   151                                                       if scheduler is not None:
+   152                                                         scheduler.step(val_score)
+   153                                                       writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step)
+   154                                           
+   155                                                       writer.add_scalar('Dice/test', val_score, global_step)
+   156                                           
+   157                                                       # writer.add_images('images', image, global_step)
+   158         1          2.0      2.0      0.0          if epoch % img_step == 0:
+   159         1     276690.0 276690.0      0.0              writer.add_images('images', sample_batched['image'], global_step)
+   160         1     657529.0 657529.0      0.1              writer.add_images('depth/true', sample_batched['depth'], global_step)
+   161         1     419213.0 419213.0      0.0              writer.add_images('depth/pred', output, global_step)
+   162         1       5423.0   5423.0      0.0          print(f"Total val logging and validation time: {time.time()-end} sec")
+   163                                                         #print(f"Total forward and backward pass time: {(time.time()-end) - batch_time.val} sec")
+   164         1          3.0      3.0      0.0          if not is_val and scheduler is not None:
+   165                                                     scheduler.step(loss)
+   166         1          4.0      4.0      0.0          epoch_loss = (running_loss * accumulation_steps) / N
+   167         1         70.0     70.0      0.0          print(f"Epoch Loss: {epoch_loss}")
+   168         1         77.0     77.0      0.0          print(f"GPU Usage after epoch {epoch} : ")
+   169         1     307264.0 307264.0      0.0          gpu_usage()
+   170         1          5.0      5.0      0.0          train_losses.append(epoch_loss)
+   171         1          1.0      1.0      0.0          if save_cp:
+   172         1          2.0      2.0      0.0              try:
+   173         1       5685.0   5685.0      0.0                  os.mkdir(dir_checkpoint)
+   174         1          6.0      6.0      0.0              except OSError:
+   175         1          4.0      4.0      0.0                  pass
+   176         1     423056.0 423056.0      0.0              torch.save(model.state_dict(), dir_checkpoint + f'CP_epoch{epoch + 1}.pth')
+   177                                           		
+   178         1       1749.0   1749.0      0.0      writer.close()
+   179                                           	
+   180         1          6.0      6.0      0.0      return train_losses, val_scores
