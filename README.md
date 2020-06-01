@@ -80,11 +80,11 @@ True Images:
 
 1) Depth
 
-![](https://raw.githubusercontent.com/genigarus/MaskDepthGenerator/master/Assets/mask_true_80.PNG)
+![](https://raw.githubusercontent.com/genigarus/MaskDepthGenerator/master/Assets/depth_true_80.PNG)
 
 2) Mask
 
-![](https://raw.githubusercontent.com/genigarus/MaskDepthGenerator/master/Assets/depth_true_80.PNG)
+![](https://raw.githubusercontent.com/genigarus/MaskDepthGenerator/master/Assets/mask_true_80.PNG)
 
 Then, I trained the network with image size of 160x160. After the first epoch, the resulting predictions were good enough to start. But after this, the depth predictions were just gray images. So, I changed the loss function. For depth prediction, I changed it to a combination of pixel intensity loss(L1), loss in edges(calculated using Sobel filters) and structural similarity(SSIM). For mask, results were coming fine but fine structures were not captured properly. So, I changed it to be a combination of BCELossWithLogits and SSIM(to maintain structural similarity).
 
